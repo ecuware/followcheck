@@ -57,7 +57,7 @@ Eklenti hem Türkçe hem İngilizce destekler. Popup menüden dil değiştirebil
    Bu repository'yi klonlayın veya indirin
 
    ```bash
-   git clone https://github.com/yourusername/instagram-follower-analysis.git
+   git clone https://github.com/ecuware/followcheck.git
    cd instagram-follower-analysis
    ```
 
@@ -264,8 +264,8 @@ Bu proje MIT Lisansı altında lisanslanmıştır.
 If you encounter any issues or have questions:  
 Herhangi bir sorunla karşılaşırsanız veya sorularınız varsa:
 
-- **Open an Issue** / **Bir Sorun Açın**: [GitHub Issues](https://github.com/yourusername/instagram-follower-analysis/issues)  
-  [GitHub Issues](https://github.com/yourusername/instagram-follower-analysis/issues)
+- **Open an Issue** / **Bir Sorun Açın**: [GitHub Issues](https://github.com/ecuware/followcheck/issues)  
+  [GitHub Issues](https://github.com/ecuware/followcheck/issues)
 
 ---
 
