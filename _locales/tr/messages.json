@@ -1,0 +1,99 @@
+{
+  "extensionName": {
+    "message": "Instagram Takip Analizi"
+  },
+  "extensionDescription": {
+    "message": "Instagram'da sizi takip etmeyenleri bulun"
+  },
+  "title": {
+    "message": "Instagram Takip Analizi"
+  },
+  "startAnalysis": {
+    "message": "Analiz Başlat"
+  },
+  "followersCount": {
+    "message": "Takipçi Sayısı:"
+  },
+  "followingCount": {
+    "message": "Takip Edilen Sayısı:"
+  },
+  "notFollowingBack": {
+    "message": "Sizi Takip Etmeyenler:"
+  },
+  "notFollowingBackList": {
+    "message": "Sizi Takip Etmeyenler:"
+  },
+  "emptyState": {
+    "message": "Instagram profil sayfanızda \"Analiz Başlat\" butonuna tıklayın."
+  },
+  "emptyStateNote": {
+    "message": "Not: Analiz işlemi birkaç dakika sürebilir."
+  },
+  "noUsersFound": {
+    "message": "Sizi takip etmeyen kullanıcı bulunamadı."
+  },
+  "downloadTxt": {
+    "message": "TXT Olarak İndir"
+  },
+  "analysisStarting": {
+    "message": "Analiz başlatılıyor... Bu işlem birkaç dakika sürebilir."
+  },
+  "analysisComplete": {
+    "message": "Analiz tamamlandı!"
+  },
+  "pleaseInstagramPage": {
+    "message": "Lütfen Instagram profil sayfasında olun"
+  },
+  "contentScriptLoading": {
+    "message": "Content script yükleniyor... Lütfen sayfayı yenileyin ve tekrar deneyin."
+  },
+  "error": {
+    "message": "Hata"
+  },
+  "unknownError": {
+    "message": "Bilinmeyen hata"
+  },
+  "pleaseRefresh": {
+    "message": "Lütfen sayfayı yenileyin."
+  },
+  "lastAnalysis": {
+    "message": "Son analiz:"
+  },
+  "downloadComplete": {
+    "message": "TXT dosyası indirildi!"
+  },
+  "noResultsToDownload": {
+    "message": "İndirilecek sonuç bulunamadı"
+  },
+  "language": {
+    "message": "Dil"
+  },
+  "turkish": {
+    "message": "Türkçe"
+  },
+  "english": {
+    "message": "English"
+  },
+  "reportTitle": {
+    "message": "Instagram Takip Analizi Raporu"
+  },
+  "date": {
+    "message": "Tarih"
+  },
+  "profile": {
+    "message": "Profil"
+  },
+  "statistics": {
+    "message": "İstatistikler"
+  },
+  "notFollowingBackUsers": {
+    "message": "Sizi Takip Etmeyen Kullanıcılar:"
+  },
+  "none": {
+    "message": "Yok"
+  },
+  "reportFooter": {
+    "message": "Bu rapor Instagram Takip Analizi eklentisi tarafından oluşturulmuştur."
+  }
+}
+
