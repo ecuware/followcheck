@@ -1,34 +1,62 @@
-// Instagram profil sayfasında çalışan content script
-
-console.log('Instagram Takip Analizi - Content Script yüklendi');
+console.log('Extension content script loaded');
 
 let isAnalyzing = false;
 
-// Mesaj dinleyicisi
+const DOM_CONFIG = {
+  modalFinders: [
+    () => document.querySelector('[role="dialog"]'),
+    () => {
+      const divs = Array.from(document.querySelectorAll('div'));
+      return divs.find(div => {
+        const s = window.getComputedStyle(div);
+        return s.position === 'fixed' && (s.zIndex === '9999' || parseInt(s.zIndex, 10) > 1000) && s.display !== 'none';
+      }) || null;
+    },
+    () => document.querySelector('div[aria-labelledby]'),
+    () => {
+      const fixed = Array.from(document.querySelectorAll('div')).filter(div => {
+        const s = window.getComputedStyle(div);
+        return s.position === 'fixed' && parseInt(s.zIndex, 10) > 100;
+      });
+      return fixed.length ? fixed[fixed.length - 1] : null;
+    }
+  ],
+  profileListLink: {
+    followers: { hrefContains: '/followers', exclude: '/following' },
+    following: { hrefContains: '/following', exclude: '/followers' }
+  }
+};
+
+function throwError(code, message) {
+  const e = new Error(message);
+  e.code = code;
+  throw e;
+}
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  console.log('Mesaj alındı:', message);
-  
+  console.log('Message received:', message);
+
   if (message.action === 'ping') {
-    sendResponse({ success: true, message: 'Content script çalışıyor' });
+    sendResponse({ success: true, message: 'Content script running' });
     return;
   }
-  
+
   if (message.action === 'startAnalysis') {
     if (isAnalyzing) {
-      sendResponse({ success: false, error: 'Analiz zaten devam ediyor' });
+      sendResponse({ success: false, error: 'Analysis already in progress' });
       return;
     }
-    
-    console.log('Analiz başlatılıyor...');
+
+    console.log('Starting analysis...');
     startAnalysis().then(result => {
-      console.log('Analiz tamamlandı:', result);
+      console.log('Analysis complete:', result);
       sendResponse({ success: true, data: result });
     }).catch(error => {
-      console.error('Analiz hatası:', error);
-      sendResponse({ success: false, error: error.message });
+      console.error('Analysis error:', error);
+      sendResponse({ success: false, error: error.message, errorCode: error.code || 'UNKNOWN' });
     });
     
-    return true; // Async response için
+    return true;
   }
 });
 
@@ -36,75 +64,66 @@ async function startAnalysis() {
   isAnalyzing = true;
   
   try {
-    // Profil sayfasında olduğumuzu kontrol et
     const currentUrl = window.location.href;
     if (!currentUrl.includes('instagram.com')) {
-      throw new Error('Lütfen Instagram profil sayfasında olun');
+      throwError('PROFILE_PAGE_REQUIRED', 'Please be on Instagram profile page');
     }
-
-    // Kullanıcı adını al
     const username = getCurrentUsername();
     if (!username) {
-      throw new Error('Kullanıcı adı bulunamadı. Lütfen bir profil sayfasında olduğunuzdan emin olun.');
+      throwError('PROFILE_PAGE_REQUIRED', 'Username not found. Please ensure you are on a profile page.');
     }
 
-    console.log('Analiz başlatılıyor için kullanıcı:', username);
+    console.log('Starting analysis for user:', username);
 
-    // Takipçiler listesini al
-    console.log('Takipçiler listesi alınıyor...');
+    console.log('Fetching followers list...');
     const followers = await getFollowersList(username);
-    console.log(`${followers.length} takipçi bulundu`);
+    console.log('Followers count:', followers.length);
 
     if (followers.length === 0) {
-      throw new Error('Takipçi listesi alınamadı. Lütfen sayfayı yenileyin ve tekrar deneyin.');
+      throwError('EMPTY_FOLLOWERS', 'Could not load followers list. Please refresh the page and try again.');
     }
 
-    // Takip edilenler listesini al
-    console.log('Takip edilenler listesi alınıyor...');
+    await sleep(2500 + Math.floor(Math.random() * 1000));
+    console.log('Fetching following list...');
     const following = await getFollowingList(username);
-    console.log(`${following.length} takip edilen bulundu`);
+    console.log('Following count:', following.length);
 
     if (following.length === 0) {
-      throw new Error('Takip edilen listesi alınamadı. Lütfen sayfayı yenileyin ve tekrar deneyin.');
+      throwError('EMPTY_FOLLOWING', 'Could not load following list. Please refresh the page and try again.');
     }
 
-    // Kullanıcı adlarını normalize et (lowercase, trim)
     const normalizedFollowers = followers.map(u => u.toLowerCase().trim()).filter(u => u);
     const normalizedFollowing = following.map(u => u.toLowerCase().trim()).filter(u => u);
     
-    console.log('Normalize edilmiş takipçiler:', normalizedFollowers.length);
-    console.log('Normalize edilmiş takip edilenler:', normalizedFollowing.length);
-    console.log('İlk 5 takipçi:', normalizedFollowers.slice(0, 5));
-    console.log('İlk 5 takip edilen:', normalizedFollowing.slice(0, 5));
+    console.log('Normalized followers:', normalizedFollowers.length);
+    console.log('Normalized following:', normalizedFollowing.length);
+    console.log('First 5 followers:', normalizedFollowers.slice(0, 5));
+    console.log('First 5 following:', normalizedFollowing.slice(0, 5));
     
-    // Karşılaştırma yap (case-insensitive)
-    // NOT: "notFollowingBack" = SİZİN takip ettiğiniz ama SİZİ takip etmeyenler
-    // Yani: following listesinde var ama followers listesinde yok
     const notFollowingBack = normalizedFollowing.filter(user => {
       return !normalizedFollowers.includes(user);
     });
-    
-    // Ters karşılaştırma: Sizi takip eden ama sizin takip etmediğiniz (bu normal, sorun değil)
+
     const youNotFollowing = normalizedFollowers.filter(user => {
       return !normalizedFollowing.includes(user);
     });
     
-    console.log('Takip etmeyenler (sizin takip ettiğiniz ama sizi takip etmeyenler):', notFollowingBack.length);
-    console.log('Takip etmeyenler listesi:', notFollowingBack.slice(0, 10));
-    console.log('Sizin takip etmediğiniz ama sizi takip edenler:', youNotFollowing.length);
-    
-    // Sonuçları hazırla
+    console.log('Not following back count:', notFollowingBack.length);
+    console.log('Not following back (first 10):', notFollowingBack.slice(0, 10));
+    console.log('You not following count:', youNotFollowing.length);
+
     const result = {
       username: username,
       followersCount: normalizedFollowers.length,
       followingCount: normalizedFollowing.length,
       notFollowingBack: notFollowingBack,
       notFollowingBackCount: notFollowingBack.length,
+      youNotFollowing: youNotFollowing,
+      youNotFollowingCount: youNotFollowing.length,
       followers: normalizedFollowers,
       following: normalizedFollowing
     };
 
-    // Sonuçları background'a gönder
     chrome.runtime.sendMessage({
       action: 'saveAnalysis',
       data: result
@@ -120,11 +139,9 @@ async function startAnalysis() {
 }
 
 function getCurrentUsername() {
-  // URL'den kullanıcı adını al
   const urlParts = window.location.pathname.split('/').filter(p => p);
   if (urlParts.length > 0) {
     const username = urlParts[0];
-    // Geçerli kullanıcı adı kontrolü
     if (username && /^[a-zA-Z0-9._]+$/.test(username) && username.length > 0 && username.length < 31) {
       return username;
     }
@@ -135,29 +152,23 @@ function getCurrentUsername() {
 async function getFollowersList(username) {
   return new Promise(async (resolve, reject) => {
     try {
-      // Takipçiler linkini bul ve tıkla
       const followersLink = await findAndClickFollowersLink();
       
       if (!followersLink) {
-        reject(new Error('Takipçiler linki bulunamadı'));
+        const e = new Error('Followers link not found');
+        e.code = 'LINK_NOT_FOUND';
+        reject(e);
         return;
       }
       
-      // Modal açılmasını bekle
       await waitForModal();
-      
-      // Biraz daha bekle (modal tam yüklensin)
-      await sleep(6000);
-      
-      // Listeyi scroll ederek topla
+      await waitForModalContent(15000);
       const followers = await scrollAndCollectUsers('followers');
       
-      // Modal'ı kapat
       await closeModal();
-      
       resolve(followers);
     } catch (error) {
-      console.error('getFollowersList hatası:', error);
+      console.error('getFollowersList error:', error);
       reject(error);
     }
   });
@@ -166,217 +177,110 @@ async function getFollowersList(username) {
 async function getFollowingList(username) {
   return new Promise(async (resolve, reject) => {
     try {
-      // Takip edilenler linkini bul ve tıkla
       const followingLink = await findAndClickFollowingLink();
-      
+
       if (!followingLink) {
-        reject(new Error('Takip edilenler linki bulunamadı'));
+        const e = new Error('Following link not found');
+        e.code = 'LINK_NOT_FOUND';
+        reject(e);
         return;
       }
       
-      // Modal açılmasını bekle
       await waitForModal();
-      
-      // Biraz daha bekle (modal tam yüklensin)
-      await sleep(6000);
-      
-      // Listeyi scroll ederek topla
+      await waitForModalContent(15000);
       const following = await scrollAndCollectUsers('following');
       
-      // Modal'ı kapat
       await closeModal();
-      
       resolve(following);
     } catch (error) {
-      console.error('getFollowingList hatası:', error);
+      console.error('getFollowingList error:', error);
       reject(error);
     }
   });
 }
 
-// Yardımcı fonksiyon: sleep
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function findAndClickFollowersLink() {
+async function findAndClickProfileList(type) {
+  const config = DOM_CONFIG.profileListLink[type];
+  if (!config) throwError('UNKNOWN', 'Invalid list type: ' + type);
+  const label = type === 'followers' ? 'Followers' : 'Following';
+  const { hrefContains, exclude } = config;
+
   return new Promise(async (resolve, reject) => {
-    console.log('Takipçiler linki aranıyor...');
-    
-    let followersElement = null;
+    let element = null;
     let attempts = 0;
     const maxAttempts = 5;
-    
-    while (attempts < maxAttempts && !followersElement) {
+
+    while (attempts < maxAttempts && !element) {
       attempts++;
-      console.log(`Deneme ${attempts}/${maxAttempts}`);
-      
-      // Strateji 1: href'te /followers geçen link (en güvenilir)
       const allLinks = Array.from(document.querySelectorAll('a[href]'));
-      followersElement = allLinks.find(el => {
-        const href = el.getAttribute('href') || el.href;
-        return href && href.includes('/followers') && !href.includes('/following');
+      element = allLinks.find(el => {
+        const href = (el.getAttribute('href') || el.href || '').toLowerCase();
+        return href.includes(hrefContains.toLowerCase()) && !href.includes(exclude.toLowerCase());
       });
-      
-      // Strateji 2: Text içinde "follower" geçen ve tıklanabilir element
-      if (!followersElement) {
-        followersElement = allLinks.find(el => {
-          const text = el.textContent || '';
-          const href = el.getAttribute('href') || el.href || '';
-          return (text.toLowerCase().includes('follower') || href.includes('/followers')) &&
-                 !text.toLowerCase().includes('following');
+      if (!element) {
+        const key = hrefContains.slice(1);
+        const other = exclude.slice(1);
+        element = allLinks.find(el => {
+          const text = (el.textContent || '').toLowerCase();
+          const href = (el.getAttribute('href') || el.href || '').toLowerCase();
+          return (text.includes(key) || href.includes(hrefContains)) && !href.includes(exclude) && !text.includes(other);
         });
       }
-      
-      // Strateji 3: Profil header'ındaki istatistikleri kontrol et
-      if (!followersElement) {
+      if (!element) {
         const headerSection = document.querySelector('header') || document.querySelector('section');
         if (headerSection) {
-          const headerLinks = headerSection.querySelectorAll('a[href]');
-          for (const link of headerLinks) {
-            const href = link.getAttribute('href') || link.href;
-            if (href.includes('/followers') && !href.includes('/following')) {
-              followersElement = link;
+          for (const link of headerSection.querySelectorAll('a[href]')) {
+            const href = (link.getAttribute('href') || link.href || '').toLowerCase();
+            if (href.includes(hrefContains.toLowerCase()) && !href.includes(exclude.toLowerCase())) {
+              element = link;
               break;
             }
           }
         }
       }
-      
-      if (followersElement) {
-        break;
-      }
-      
-      // Kısa bir bekleme ve tekrar dene
-      if (attempts < maxAttempts) {
-        await sleep(1000);
-      }
+      if (!element && attempts < maxAttempts) await sleep(1000);
     }
-    
-    if (followersElement) {
-      console.log('Takipçiler linki bulundu:', followersElement);
-      followersElement.click();
-      console.log('Takipçiler linkine tıklandı');
-      await sleep(5000);
-      resolve(followersElement);
+
+    if (element) {
+      console.log(label + ' link found, clicking...');
+      element.click();
+      await sleep(2000);
+      resolve(element);
     } else {
-      console.error('Takipçiler linki bulunamadı');
-      reject(new Error('Takipçiler linki bulunamadı. Lütfen profil sayfasında olduğunuzdan emin olun.'));
+      const err = new Error(label + ' link not found. Please ensure you are on a profile page.');
+      err.code = 'LINK_NOT_FOUND';
+      reject(err);
     }
   });
+}
+
+async function findAndClickFollowersLink() {
+  return findAndClickProfileList('followers');
 }
 
 async function findAndClickFollowingLink() {
-  return new Promise(async (resolve, reject) => {
-    console.log('Takip edilenler linki aranıyor...');
-    
-    let followingElement = null;
-    let attempts = 0;
-    const maxAttempts = 5;
-    
-    while (attempts < maxAttempts && !followingElement) {
-      attempts++;
-      console.log(`Deneme ${attempts}/${maxAttempts}`);
-      
-      // Strateji 1: href'te /following geçen link (en güvenilir)
-      const allLinks = Array.from(document.querySelectorAll('a[href]'));
-      followingElement = allLinks.find(el => {
-        const href = el.getAttribute('href') || el.href;
-        return href && href.includes('/following') && !href.includes('/followers');
-      });
-      
-      // Strateji 2: Text içinde "following" geçen ve tıklanabilir element
-      if (!followingElement) {
-        followingElement = allLinks.find(el => {
-          const text = el.textContent || '';
-          const href = el.getAttribute('href') || el.href || '';
-          return (text.toLowerCase().includes('following') || href.includes('/following')) &&
-                 !text.toLowerCase().includes('follower');
-        });
-      }
-      
-      // Strateji 3: Profil header'ındaki istatistikleri kontrol et
-      if (!followingElement) {
-        const headerSection = document.querySelector('header') || document.querySelector('section');
-        if (headerSection) {
-          const headerLinks = headerSection.querySelectorAll('a[href]');
-          for (const link of headerLinks) {
-            const href = link.getAttribute('href') || link.href;
-            if (href.includes('/following') && !href.includes('/followers')) {
-              followingElement = link;
-              break;
-            }
-          }
-        }
-      }
-      
-      if (followingElement) {
-        break;
-      }
-      
-      // Kısa bir bekleme ve tekrar dene
-      if (attempts < maxAttempts) {
-        await sleep(1000);
-      }
-    }
-    
-    if (followingElement) {
-      console.log('Takip edilenler linki bulundu:', followingElement);
-      followingElement.click();
-      console.log('Takip edilenler linkine tıklandı');
-      await sleep(5000);
-      resolve(followingElement);
-    } else {
-      console.error('Takip edilenler linki bulunamadı');
-      reject(new Error('Takip edilenler linki bulunamadı. Lütfen profil sayfasında olduğunuzdan emin olun.'));
-    }
-  });
+  return findAndClickProfileList('following');
 }
 
 async function waitForModal() {
-  console.log('Modal açılması bekleniyor...');
+  console.log('Waiting for modal...');
   return new Promise((resolve) => {
     let attempts = 0;
-    const maxAttempts = 60; // 60 * 200ms = 12 saniye
-    
+    const maxAttempts = 60;
+
     const checkModal = setInterval(() => {
       attempts++;
-      
-      // Çeşitli modal selector'larını dene
-      let modal = document.querySelector('[role="dialog"]');
-      
-      if (!modal) {
-        // Instagram'ın yeni yapısında modal farklı olabilir
-        const allDivs = Array.from(document.querySelectorAll('div'));
-        modal = allDivs.find(div => {
-          const style = window.getComputedStyle(div);
-          return style.position === 'fixed' && 
-                 (style.zIndex === '9999' || parseInt(style.zIndex) > 1000) &&
-                 style.display !== 'none';
-        });
-      }
-      
-      if (!modal) {
-        modal = document.querySelector('div[aria-labelledby]');
-      }
-      
-      if (!modal) {
-        // En son çare: body içindeki en büyük fixed div
-        const fixedDivs = Array.from(document.querySelectorAll('div')).filter(div => {
-          const style = window.getComputedStyle(div);
-          return style.position === 'fixed' && parseInt(style.zIndex) > 100;
-        });
-        if (fixedDivs.length > 0) {
-          modal = fixedDivs[fixedDivs.length - 1];
-        }
-      }
-      
+      const modal = findModal();
       if (modal) {
-        console.log('Modal bulundu!');
+        console.log('Modal found');
         clearInterval(checkModal);
-        setTimeout(resolve, 4000);
+        setTimeout(resolve, 800);
       } else if (attempts >= maxAttempts) {
-        console.log('Modal timeout - devam ediliyor');
+        console.log('Modal timeout, continuing');
         clearInterval(checkModal);
         resolve();
       }
@@ -384,16 +288,44 @@ async function waitForModal() {
   });
 }
 
+function waitForModalContent(maxWaitMs) {
+  return new Promise((resolve) => {
+    const start = Date.now();
+    const poll = () => {
+      const modal = findModal();
+      if (modal) {
+        const links = modal.querySelectorAll('a[href^="/"]');
+        const scrollable = Array.from(modal.querySelectorAll('div')).find(div => {
+          const sh = div.scrollHeight;
+          const ch = div.clientHeight;
+          return sh > ch && sh > 100;
+        });
+        if (links.length >= 2 || scrollable) {
+          console.log('Modal content ready, link count:', links.length);
+          resolve();
+          return;
+        }
+      }
+      if (Date.now() - start >= maxWaitMs) {
+        console.log('Modal content wait timeout, continuing');
+        resolve();
+        return;
+      }
+      setTimeout(poll, 300);
+    };
+    poll();
+  });
+}
+
 async function scrollAndCollectUsers(type) {
-  console.log(`${type} listesi toplanıyor...`);
+  console.log(`Collecting ${type} list...`);
   const users = new Set();
   let previousCount = 0;
   let noChangeCount = 0;
-  const maxNoChange = 40; // 40 iterasyon boyunca değişiklik yoksa dur
+  const maxNoChange = 40;
   let lastScrollHeight = 0;
   let scrollNoChangeCount = 0;
-  
-  // Geçersiz kullanıcı adları listesi
+
   const excludedUsernames = new Set([
     'explore', 'reels', 'stories', 'accounts', 'direct', 'static', 'www',
     'p', 'tv', 'tagged', 'saved', 'settings', 'help', 'about', 'blog',
@@ -402,137 +334,102 @@ async function scrollAndCollectUsers(type) {
   ]);
   
   return new Promise((resolve) => {
+    let timeoutId = null;
+    let maxTimeoutId = null;
     let iteration = 0;
-    const scrollInterval = setInterval(() => {
+
+    function runIteration() {
       iteration++;
-      console.log(`${type} toplama - iterasyon ${iteration}, mevcut kullanıcı sayısı: ${users.size}`);
-      
-      // Modal'ı bul
+      console.log(`${type} collection - iteration ${iteration}, current count: ${users.size}`);
+
       let modal = findModal();
-      
       if (!modal) {
-        console.warn('Modal bulunamadı');
+        console.warn('Modal not found');
+        scheduleNext();
         return;
       }
-      
-      // Instagram'ın güncel DOM yapısından kullanıcı adlarını çıkar
+
       const extractedUsers = extractUsernamesFromModal(modal, excludedUsernames);
-      
-      // Yeni kullanıcıları ekle
       extractedUsers.forEach(user => users.add(user));
-      
       const currentCount = users.size;
-      
+      chrome.runtime.sendMessage({
+        action: 'analysisProgress',
+        data: { phase: type, current: currentCount }
+      }).catch(() => {});
+
       if (currentCount === previousCount) {
         noChangeCount++;
       } else {
         noChangeCount = 0;
-        console.log(`${type} - Yeni kullanıcılar eklendi! Toplam: ${currentCount}`);
+        console.log(`${type} - New users added, total: ${currentCount}`);
       }
-      
       previousCount = currentCount;
-      
-      // Scroll yap - YENİ VE DAHA GÜVENİLİR SCROLL SİSTEMİ
+
       const scrollResult = performScroll(modal);
-      
       if (scrollResult.scrolled) {
         const scrollHeight = scrollResult.scrollHeight;
         const scrollTop = scrollResult.scrollTop;
         const clientHeight = scrollResult.clientHeight;
         const maxScroll = scrollHeight - clientHeight;
-        
-        console.log(`${type} scroll - Top: ${scrollTop}, Height: ${scrollHeight}, Client: ${clientHeight}, Max: ${maxScroll}`);
-        
-        // Scroll height değişimini kontrol et
-        if (Math.abs(scrollHeight - lastScrollHeight) < 10) {
-          scrollNoChangeCount++;
-        } else {
-          scrollNoChangeCount = 0;
-        }
+        if (Math.abs(scrollHeight - lastScrollHeight) < 10) scrollNoChangeCount++;
+        else scrollNoChangeCount = 0;
         lastScrollHeight = scrollHeight;
-        
-        // Sona ulaşıldı mı kontrol et
-        if (scrollTop >= maxScroll - 10) {
-          console.log(`${type} - Scroll sonuna ulaşıldı`);
-          noChangeCount++;
-        }
+        if (scrollTop >= maxScroll - 10) noChangeCount++;
       } else {
-        console.warn(`${type} - Scroll yapılamadı`);
         noChangeCount++;
       }
-      
-      // Eğer değişiklik yoksa ve yeterince kullanıcı toplandıysa dur
+
       if (noChangeCount >= maxNoChange && users.size > 0) {
-        clearInterval(scrollInterval);
-        console.log(`${type} için toplam ${users.size} kullanıcı bulundu`);
+        clearTimeout(timeoutId);
+        clearTimeout(maxTimeoutId);
+        console.log(`${type} total users collected: ${users.size}`);
         resolve(Array.from(users));
+        return;
       }
-      
-    }, 1500); // Her 1500ms'de bir kontrol et
-    
-    // Maksimum 360 saniye bekle
-    setTimeout(() => {
-      clearInterval(scrollInterval);
-      console.log(`${type} için timeout - toplam ${users.size} kullanıcı bulundu`);
+      scheduleNext();
+    }
+
+    function scheduleNext() {
+      const jitter = 1200 + Math.floor(Math.random() * 400);
+      timeoutId = setTimeout(runIteration, jitter);
+    }
+
+    maxTimeoutId = setTimeout(() => {
+      clearTimeout(timeoutId);
+      console.log(`${type} timeout - total users: ${users.size}`);
       resolve(Array.from(users));
     }, 360000);
+    runIteration();
   });
 }
 
-// Modal bulma fonksiyonu
 function findModal() {
-  let modal = document.querySelector('[role="dialog"]');
-  
-  if (!modal) {
-    const allDivs = Array.from(document.querySelectorAll('div'));
-    modal = allDivs.find(div => {
-      const style = window.getComputedStyle(div);
-      return style.position === 'fixed' && 
-             (style.zIndex === '9999' || parseInt(style.zIndex) > 1000) &&
-             style.display !== 'none';
-    });
+  for (const finder of DOM_CONFIG.modalFinders) {
+    try {
+      const modal = finder();
+      if (modal) return modal;
+    } catch (e) {}
   }
-  
-  if (!modal) {
-    modal = document.querySelector('div[aria-labelledby]');
-  }
-  
-  if (!modal) {
-    const fixedDivs = Array.from(document.querySelectorAll('div')).filter(div => {
-      const style = window.getComputedStyle(div);
-      return style.position === 'fixed' && parseInt(style.zIndex) > 100;
-    });
-    if (fixedDivs.length > 0) {
-      modal = fixedDivs[fixedDivs.length - 1];
-    }
-  }
-  
-  return modal;
+  return null;
 }
 
-// Scroll yapma fonksiyonu - YENİ VE DAHA GÜVENİLİR
 function performScroll(modal) {
   try {
-    // Modal içindeki tüm div'leri bul
     const allDivs = modal.querySelectorAll('div');
     let scrollableDiv = null;
     let maxScrollHeight = 0;
-    
-    // En yüksek scrollHeight'a sahip div'i bul
+
     for (const div of allDivs) {
       const style = window.getComputedStyle(div);
       const scrollHeight = div.scrollHeight;
       const clientHeight = div.clientHeight;
-      const hasOverflow = style.overflowY === 'auto' || style.overflowY === 'scroll' || 
+      const hasOverflow = style.overflowY === 'auto' || style.overflowY === 'scroll' ||
                          style.overflow === 'auto' || style.overflow === 'scroll';
-      
-      // Scroll edilebilir ve yüksek scrollHeight'a sahip div'i bul
+
       if (scrollHeight > clientHeight && scrollHeight > maxScrollHeight) {
         maxScrollHeight = scrollHeight;
         scrollableDiv = div;
       }
-      
-      // Ayrıca overflow olan div'leri de kontrol et
       if (hasOverflow && scrollHeight > clientHeight) {
         scrollableDiv = div;
         break;
@@ -540,7 +437,7 @@ function performScroll(modal) {
     }
     
     if (!scrollableDiv) {
-      console.warn('Scrollable div bulunamadı');
+      console.warn('Scrollable div not found');
       return { scrolled: false };
     }
     
@@ -548,8 +445,7 @@ function performScroll(modal) {
     const scrollTop = scrollableDiv.scrollTop;
     const clientHeight = scrollableDiv.clientHeight;
     const maxScroll = scrollHeight - clientHeight;
-    
-    // Scroll yap
+
     if (scrollTop < maxScroll - 10) {
       const scrollAmount = Math.min(2000, maxScroll - scrollTop);
       scrollableDiv.scrollTop += scrollAmount;
@@ -561,7 +457,7 @@ function performScroll(modal) {
         clientHeight: clientHeight
       };
     } else {
-      console.log('Scroll sonuna ulaşıldı');
+      console.log('Scroll reached end');
       return {
         scrolled: false,
         scrollHeight: scrollHeight,
@@ -570,31 +466,23 @@ function performScroll(modal) {
       };
     }
   } catch (error) {
-    console.error('Scroll hatası:', error);
+    console.error('Scroll error:', error);
     return { scrolled: false };
   }
 }
 
-// Modal'dan kullanıcı adlarını çıkarma fonksiyonu - SADECE LİNKLERDEN
 function extractUsernamesFromModal(modal, excludedUsernames) {
   const users = new Set();
-  
-  // SADECE Linklerden kullanıcı adlarını çıkar (EN GÜVENİLİR)
   const allLinks = modal.querySelectorAll('a[href]');
-  console.log(`Modal içinde ${allLinks.length} link bulundu`);
+  console.log(`Links in modal: ${allLinks.length}`);
   
   allLinks.forEach(link => {
     const href = link.getAttribute('href') || link.href;
     if (href && typeof href === 'string' && href.startsWith('/')) {
-      // URL'den kullanıcı adını çıkar
       const parts = href.split('/').filter(p => p && p.trim());
       if (parts.length > 0) {
         let username = parts[0].trim();
-        
-        // @ işaretini ve özel karakterleri kaldır
         username = username.replace(/^@/, '').replace(/[#?].*$/, '');
-        
-        // Geçerli kullanıcı adı kontrolü - ÇOK SIKI
         if (isValidUsernameVeryStrict(username, excludedUsernames)) {
           users.add(username);
         }
@@ -602,45 +490,31 @@ function extractUsernamesFromModal(modal, excludedUsernames) {
     }
   });
   
-  console.log(`Bu iterasyonda ${users.size} benzersiz kullanıcı bulundu`);
-  console.log('Bulunan kullanıcılar:', Array.from(users).slice(0, 10));
+  console.log(`Unique users this iteration: ${users.size}`);
+  console.log('Found users (first 10):', Array.from(users).slice(0, 10));
   
   return Array.from(users);
 }
 
-// Geçerli kullanıcı adı kontrolü - ÇOK SIKI
 function isValidUsernameVeryStrict(username, excludedUsernames) {
-  // Boş veya çok kısa olmamalı
   if (!username || username.length < 3 || username.length > 30) {
     return false;
   }
-  
-  // Sadece harf, rakam, nokta ve alt çizgi içermeli
   if (!/^[a-zA-Z0-9._]+$/.test(username)) {
     return false;
   }
-  
-  // Başında veya sonunda nokta olmamalı
   if (username.startsWith('.') || username.endsWith('.')) {
     return false;
   }
-  
-  // Ardışık nokta olmamalı
   if (username.includes('..')) {
     return false;
   }
-  
-  // Alt çizgi ile başlamamalı
   if (username.startsWith('_')) {
     return false;
   }
-  
-  // Hariç tutulan kullanıcı adları
   if (excludedUsernames.has(username.toLowerCase())) {
     return false;
   }
-  
-  // Instagram'ın özel sayfaları
   const specialPages = ['explore', 'reels', 'stories', 'accounts', 'direct', 'static', 'www',
                        'p', 'tv', 'tagged', 'saved', 'settings', 'help', 'about', 'blog',
                        'jobs', 'api', 'developers', 'privacy', 'terms', 'locations', 'language',
@@ -649,13 +523,9 @@ function isValidUsernameVeryStrict(username, excludedUsernames) {
   if (specialPages.includes(username.toLowerCase())) {
     return false;
   }
-  
-  // Sayı ile başlamamalı (Instagram kullanıcı adları sayı ile başlamaz)
   if (/^\d/.test(username)) {
     return false;
   }
-  
-  // Sadece sayı olmamalı
   if (/^\d+$/.test(username)) {
     return false;
   }
@@ -664,9 +534,7 @@ function isValidUsernameVeryStrict(username, excludedUsernames) {
 }
 
 function closeModal() {
-  console.log('Modal kapatılıyor...');
-  
-  // Modal'ı kapat - önce X butonunu bul
+  console.log('Closing modal...');
   const closeButtons = [
     document.querySelector('button[aria-label*="Close"]'),
     document.querySelector('svg[aria-label="Close"]')?.closest('button'),
@@ -682,7 +550,6 @@ function closeModal() {
   if (closeButtons.length > 0) {
     closeButtons[0].click();
   } else {
-    // ESC tuşu gönder
     const escEvent = new KeyboardEvent('keydown', { 
       key: 'Escape', 
       keyCode: 27,
@@ -691,8 +558,6 @@ function closeModal() {
     });
     document.dispatchEvent(escEvent);
   }
-  
-  // Modal kapandığını kontrol et
   return new Promise((resolve) => {
     const checkClosed = setInterval(() => {
       const modal = document.querySelector('[role="dialog"]');

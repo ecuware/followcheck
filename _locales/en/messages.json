@@ -23,6 +23,27 @@
   "notFollowingBackList": {
     "message": "Users Not Following You Back:"
   },
+  "youNotFollowingList": {
+    "message": "Following you but you don't follow:"
+  },
+  "youNotFollowingLabel": {
+    "message": "You don't follow"
+  },
+  "notFollowingBackShort": {
+    "message": "Not back"
+  },
+  "youNotFollowingShort": {
+    "message": "You skip"
+  },
+  "searchPlaceholder": {
+    "message": "Search list..."
+  },
+  "downloadCsv": {
+    "message": "CSV"
+  },
+  "downloadJson": {
+    "message": "JSON"
+  },
   "emptyState": {
     "message": "Click \"Start Analysis\" button on your Instagram profile page."
   },
@@ -38,6 +59,12 @@
   "analysisStarting": {
     "message": "Analysis starting... This process may take a few minutes."
   },
+  "progressFollowers": {
+    "message": "Collecting followers:"
+  },
+  "progressFollowing": {
+    "message": "Collecting following:"
+  },
   "analysisComplete": {
     "message": "Analysis completed!"
   },
@@ -49,6 +76,21 @@
   },
   "error": {
     "message": "Error"
+  },
+  "errorProfilePageRequired": {
+    "message": "Please be on your Instagram profile page."
+  },
+  "errorLinkNotFound": {
+    "message": "Could not open followers/following list. Refresh the page and try again."
+  },
+  "errorEmptyFollowers": {
+    "message": "Could not load followers list. Refresh the page and try again."
+  },
+  "errorEmptyFollowing": {
+    "message": "Could not load following list. Refresh the page and try again."
+  },
+  "retrying": {
+    "message": "Retrying..."
   },
   "unknownError": {
     "message": "Unknown error"

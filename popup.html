@@ -1,205 +1,324 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet">
   <style>
-    * {
-      box-sizing: border-box;
+    :root {
+      --popup-bg: #0c0c0d;
+      --surface: #161618;
+      --surface-hover: #1c1c1f;
+      --border: #2a2a2e;
+      --text: #fafafa;
+      --text-muted: #71717a;
+      --accent: #22c55e;
+      --accent-hover: #16a34a;
+      --danger: #ef4444;
+      --warning: #eab308;
+      --radius: 8px;
+      --radius-sm: 6px;
+      --space-xs: 4px;
+      --space-sm: 8px;
+      --space-md: 12px;
+      --space-lg: 16px;
+      --popup-w: 360px;
     }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      overflow: hidden;
+      height: 100%;
+    }
+
     body {
-      width: 500px;
-      min-height: 400px;
-      padding: 20px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      margin: 0;
-      background: #fafafa;
-    }
-    h2 {
-      margin: 0 0 20px 0;
-      color: #262626;
-      font-size: 20px;
-    }
-    .button {
-      width: 100%;
-      padding: 12px;
-      background: #0095f6;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      margin-bottom: 15px;
-      transition: background 0.2s;
-    }
-    .button:hover {
-      background: #0084d9;
-    }
-    .button:disabled {
-      background: #ccc;
-      cursor: not-allowed;
-    }
-    .button-secondary {
-      background: #262626;
-    }
-    .button-secondary:hover {
-      background: #1a1a1a;
-    }
-    .info-box {
-      background: white;
-      border: 1px solid #dbdbdb;
-      border-radius: 8px;
-      padding: 15px;
-      margin-bottom: 15px;
-    }
-    .info-row {
+      width: var(--popup-w);
+      max-width: 100%;
+      height: 480px;
+      max-height: 480px;
+      overflow: hidden;
       display: flex;
-      justify-content: space-between;
-      margin-bottom: 10px;
-      font-size: 14px;
+      flex-direction: column;
+      font-family: 'DM Sans', system-ui, sans-serif;
+      font-size: 13px;
+      line-height: 1.4;
+      background: var(--popup-bg);
+      color: var(--text);
     }
-    .info-label {
-      color: #8e8e8e;
-    }
-    .info-value {
-      color: #262626;
-      font-weight: 600;
-    }
-    .status {
-      padding: 10px;
-      border-radius: 8px;
-      margin-bottom: 15px;
-      font-size: 14px;
-      text-align: center;
-    }
-    .status.info {
-      background: #e3f2fd;
-      color: #1976d2;
-    }
-    .status.error {
-      background: #ffebee;
-      color: #c62828;
-    }
-    .status.success {
-      background: #e8f5e9;
-      color: #2e7d32;
-    }
-    .status.loading {
-      background: #fff3e0;
-      color: #e65100;
-    }
-    .users-list {
-      max-height: 300px;
-      overflow-y: auto;
-      background: white;
-      border: 1px solid #dbdbdb;
-      border-radius: 8px;
-      padding: 10px;
-    }
-    .user-item {
-      padding: 8px;
-      border-bottom: 1px solid #f0f0f0;
-      font-size: 14px;
-      color: #262626;
-    }
-    .user-item:last-child {
-      border-bottom: none;
-    }
-    .user-link {
-      color: #0095f6;
-      text-decoration: none;
-    }
-    .user-link:hover {
-      text-decoration: underline;
-    }
-    .empty-state {
-      text-align: center;
-      padding: 40px 20px;
-      color: #8e8e8e;
-    }
-    .loading-spinner {
-      display: inline-block;
-      width: 16px;
-      height: 16px;
-      border: 2px solid #f3f3f3;
-      border-top: 2px solid #0095f6;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin-right: 8px;
-      vertical-align: middle;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    .language-selector {
-      position: absolute;
-      top: 15px;
-      right: 15px;
+
+    .header {
+      flex-shrink: 0;
       display: flex;
-      gap: 8px;
       align-items: center;
+      justify-content: space-between;
+      gap: var(--space-md);
+      padding: var(--space-md) var(--space-lg);
+      border-bottom: 1px solid var(--border);
+      min-width: 0;
     }
+
+    .title {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .lang-wrap {
+      display: flex;
+      gap: var(--space-xs);
+    }
+
     .lang-btn {
       padding: 4px 8px;
-      border: 1px solid #dbdbdb;
-      background: white;
-      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
       cursor: pointer;
+      transition: color 0.15s, background 0.15s, border-color 0.15s;
+    }
+    .lang-btn:hover { color: var(--text); background: var(--surface); }
+    .lang-btn.active { color: var(--popup-bg); background: var(--accent); border-color: var(--accent); }
+
+    .main {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: var(--space-lg);
+      min-width: 0;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .main::-webkit-scrollbar {
+      display: none;
+    }
+
+    #status {
+      flex-shrink: 0;
+      padding: var(--space-sm) var(--space-md);
+      margin-bottom: var(--space-md);
       font-size: 12px;
-      transition: all 0.2s;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-sm);
+      min-width: 0;
+      overflow: hidden;
+      word-break: break-word;
+      overflow-wrap: break-word;
     }
-    .lang-btn:hover {
-      background: #f0f0f0;
+    #statusText { min-width: 0; }
+
+    .main .btn-primary {
+      margin-bottom: var(--space-lg);
     }
-    .lang-btn.active {
-      background: #0095f6;
-      color: white;
-      border-color: #0095f6;
+    #status.info { background: rgba(34, 197, 94, 0.12); color: var(--accent); }
+    #status.loading { background: rgba(234, 179, 8, 0.12); color: var(--warning); }
+    #status.success { background: rgba(34, 197, 94, 0.12); color: var(--accent); }
+    #status.error { background: rgba(239, 68, 68, 0.12); color: var(--danger); }
+
+    .btn {
+      width: 100%;
+      padding: 10px var(--space-md);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
     }
+    .btn:hover { background: var(--surface-hover); border-color: var(--text-muted); }
+    .btn:active { transform: scale(0.99); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--popup-bg); }
+    .btn-primary:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); }
+
+    .empty-state {
+      padding: var(--space-lg);
+      text-align: center;
+    }
+    .empty-text { color: var(--text-muted); font-size: 13px; margin-bottom: var(--space-xs); }
+    .empty-note { color: var(--text-muted); font-size: 11px; opacity: 0.9; }
+
+    #results {
+      display: none;
+      margin-top: 0;
+    }
+    #results.visible {
+      display: block;
+      margin-top: var(--space-md);
+      padding-top: var(--space-md);
+      border-top: 1px solid var(--border);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--space-sm);
+      margin-bottom: var(--space-md);
+    }
+    .stat {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: var(--space-sm) var(--space-xs);
+      text-align: center;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .stat-value { font-size: 16px; font-weight: 600; color: var(--text); }
+    .stat-value.danger { color: var(--danger); }
+    .stat-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-top: 2px; word-break: break-word; overflow-wrap: break-word; }
+
+    .section {
+      margin-bottom: var(--space-md);
+    }
+    .section-head {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: var(--space-xs);
+    }
+    .search-input {
+      width: 100%;
+      padding: 6px 10px;
+      margin-bottom: var(--space-xs);
+      font-family: inherit;
+      font-size: 12px;
+      color: var(--text);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+    }
+    .search-input::placeholder { color: var(--text-muted); }
+
+    .list {
+      max-height: 92px;
+      overflow-y: auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .list::-webkit-scrollbar {
+      display: none;
+    }
+    .list-item {
+      padding: 6px 10px;
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+    }
+    .list-item:last-child { border-bottom: none; }
+    .list-link {
+      color: var(--text);
+      text-decoration: none;
+      display: block;
+      transition: color 0.1s;
+    }
+    .list-link:hover { color: var(--accent); }
+
+    .downloads {
+      display: none;
+      gap: var(--space-sm);
+      margin-top: var(--space-md);
+      flex-wrap: wrap;
+    }
+    .downloads.visible {
+      display: flex;
+    }
+    .downloads .btn { width: auto; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .loading-spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
-  <div class="language-selector">
-    <button id="langTr" class="lang-btn" data-lang="tr">TR</button>
-    <button id="langEn" class="lang-btn" data-lang="en">EN</button>
+  <header class="header">
+    <h1 id="title" class="title">Instagram Analysis</h1>
+    <div class="lang-wrap">
+      <button type="button" id="langTr" class="lang-btn" data-lang="tr">TR</button>
+      <button type="button" id="langEn" class="lang-btn active" data-lang="en">EN</button>
+    </div>
+  </header>
+
+  <div id="status" class="status info" style="display: none;" role="status">
+    <span class="loading-spinner" aria-hidden="true"></span>
+    <span id="statusText"></span>
   </div>
-  
-  <h2 id="title">Instagram Takip Analizi</h2>
-  
-  <div id="status" class="status info" style="display: none;"></div>
-  
-  <button id="analyzeBtn" class="button">Analiz Başlat</button>
-  
-  <div id="results" style="display: none;">
-    <div class="info-box">
-      <div class="info-row">
-        <span class="info-label" id="followersLabel">Takipçi Sayısı:</span>
-        <span class="info-value" id="followersCount">-</span>
+
+  <main class="main">
+    <button type="button" id="analyzeBtn" class="btn btn-primary">Start Analysis</button>
+
+    <div id="emptyState" class="empty-state">
+      <p id="emptyStateText" class="empty-text">Click "Start Analysis" on your Instagram profile page</p>
+      <p id="emptyStateNote" class="empty-note">Analysis may take a few minutes</p>
+    </div>
+
+    <div id="results" class="results">
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-value" id="followersCount">-</div>
+          <div class="stat-label" id="followersLabel">Followers</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="followingCount">-</div>
+          <div class="stat-label" id="followingLabel">Following</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value danger" id="notFollowingCount">-</div>
+          <div class="stat-label" id="notFollowingLabel">Not back</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="youNotFollowingCount">-</div>
+          <div class="stat-label" id="youNotFollowingLabel">You skip</div>
+        </div>
       </div>
-      <div class="info-row">
-        <span class="info-label" id="followingLabel">Takip Edilen Sayısı:</span>
-        <span class="info-value" id="followingCount">-</span>
-      </div>
-      <div class="info-row">
-        <span class="info-label" id="notFollowingLabel">Sizi Takip Etmeyenler:</span>
-        <span class="info-value" id="notFollowingCount" style="color: #c62828;">-</span>
+
+      <section class="section">
+        <h2 class="section-head" id="notFollowingBackTitle">Not Following Back</h2>
+        <input type="text" id="searchInput" class="search-input" placeholder="Search..." style="display: none;" aria-label="Search list" />
+        <div class="list" id="usersList" role="list"></div>
+      </section>
+
+      <section class="section" id="youNotFollowingSection" style="display: none;">
+        <h2 class="section-head" id="youNotFollowingTitle">You don't follow</h2>
+        <div class="list" id="youNotFollowingList" role="list"></div>
+      </section>
+
+      <div id="downloads" class="downloads">
+        <button type="button" id="downloadBtn" class="btn">TXT</button>
+        <button type="button" id="downloadCsvBtn" class="btn">CSV</button>
+        <button type="button" id="downloadJsonBtn" class="btn">JSON</button>
       </div>
     </div>
-    
-    <h3 id="notFollowingListTitle" style="font-size: 16px; margin: 15px 0 10px 0; color: #262626;">Sizi Takip Etmeyenler:</h3>
-    <div class="users-list" id="usersList"></div>
-    
-    <button id="downloadBtn" class="button button-secondary" style="margin-top: 15px;">TXT Olarak İndir</button>
-  </div>
-  
-  <div id="emptyState" class="empty-state">
-    <p id="emptyStateText">Instagram profil sayfanızda "Analiz Başlat" butonuna tıklayın.</p>
-    <p id="emptyStateNote" style="font-size: 12px; margin-top: 10px; color: #8e8e8e;">
-      Not: Analiz işlemi birkaç dakika sürebilir.
-    </p>
-  </div>
-  
+  </main>
+
   <script src="i18n.js"></script>
   <script src="popup.js"></script>
 </body>

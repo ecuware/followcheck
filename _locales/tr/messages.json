@@ -23,6 +23,27 @@
   "notFollowingBackList": {
     "message": "Sizi Takip Etmeyenler:"
   },
+  "youNotFollowingList": {
+    "message": "Sizi takip eden ama sizin takip etmediğiniz:"
+  },
+  "youNotFollowingLabel": {
+    "message": "Takip etmiyorsunuz"
+  },
+  "notFollowingBackShort": {
+    "message": "Geri takip yok"
+  },
+  "youNotFollowingShort": {
+    "message": "Takip etmiyorsun"
+  },
+  "searchPlaceholder": {
+    "message": "Listede ara..."
+  },
+  "downloadCsv": {
+    "message": "CSV"
+  },
+  "downloadJson": {
+    "message": "JSON"
+  },
   "emptyState": {
     "message": "Instagram profil sayfanızda \"Analiz Başlat\" butonuna tıklayın."
   },
@@ -38,6 +59,12 @@
   "analysisStarting": {
     "message": "Analiz başlatılıyor... Bu işlem birkaç dakika sürebilir."
   },
+  "progressFollowers": {
+    "message": "Takipçiler toplanıyor:"
+  },
+  "progressFollowing": {
+    "message": "Takip edilenler toplanıyor:"
+  },
   "analysisComplete": {
     "message": "Analiz tamamlandı!"
   },
@@ -49,6 +76,21 @@
   },
   "error": {
     "message": "Hata"
+  },
+  "errorProfilePageRequired": {
+    "message": "Lütfen Instagram profil sayfasında olun."
+  },
+  "errorLinkNotFound": {
+    "message": "Takipçi/takip edilen listesi açılamadı. Sayfayı yenileyip tekrar deneyin."
+  },
+  "errorEmptyFollowers": {
+    "message": "Takipçi listesi alınamadı. Sayfayı yenileyip tekrar deneyin."
+  },
+  "errorEmptyFollowing": {
+    "message": "Takip edilen listesi alınamadı. Sayfayı yenileyip tekrar deneyin."
+  },
+  "retrying": {
+    "message": "Tekrar deniyor..."
   },
   "unknownError": {
     "message": "Bilinmeyen hata"

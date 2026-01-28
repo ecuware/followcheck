@@ -9,7 +9,8 @@
     "activeTab"
   ],
   "host_permissions": [
-    "https://www.instagram.com/*"
+    "https://www.instagram.com/*",
+    "http://127.0.0.1/*"
   ],
   "web_accessible_resources": [
     {
